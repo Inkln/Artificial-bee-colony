@@ -1,0 +1,17 @@
+/home/alexander/IDE/clion-2017.3.2/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/usr/bin/make -DCMAKE_C_COMPILER=/usr/bin/gcc-8 -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 -G "CodeBlocks - Unix Makefiles" /home/alexander/github/Artificial-bee-colony/CPP
+-- The CXX compiler identification is unknown
+CMake Error at CMakeLists.txt:2 (project):
+  The CMAKE_CXX_COMPILER:
+
+    /usr/bin/g++-8
+
+  is not a full path to an existing compiler tool.
+
+  Tell CMake where to find the compiler by setting either the environment
+  variable "CXX" or the CMake cache entry CMAKE_CXX_COMPILER to the full path
+  to the compiler, or to the compiler name if it is in the PATH.
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/alexander/github/Artificial-bee-colony/CPP/cmake-build-debug/CMakeFiles/CMakeOutput.log".
+See also "/home/alexander/github/Artificial-bee-colony/CPP/cmake-build-debug/CMakeFiles/CMakeError.log".
