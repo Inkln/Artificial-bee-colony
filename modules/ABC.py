@@ -20,7 +20,7 @@ class Bee(object):
     # sigma - dispersion of initial velocities
     #
     ################################################################
-    def __init__(self, function, min_bounds, max_bounds, sigma):
+    def __init__(self, function, min_bounds, max_bounds):
 
         self.function = function
         self.position = numpy.zeros(min_bounds.shape[0])
@@ -29,7 +29,7 @@ class Bee(object):
             self.position[i] = numpy.random.uniform(
                 min_bounds[i], max_bounds[i], 1)
 
-        self.velocity = numpy.random.normal(0, sigma, min_bounds.shape[0])
+        self.velocity = numpy.zeros(shape=min_bounds.shape)
 
         self.local_minimum = numpy.copy(self.position)
         self.local_minimum_value = self.function(self.local_minimum)
@@ -45,12 +45,13 @@ class Bee(object):
     # weight - current weight of bee (float between 0 and 1)
     # local_attraction - coefficient of attration to local minimum
     #                                               (float between 0 and 1)
-    # global_attraction - coefficient ogf attration to global minimum
+    # global_attraction - coefficient of attration to global minimum
     #                                               (float between 0 and 1)
+    # sigma - speed random dispersion
     #
     ################################################################
     def calculate_next_velocity(self, global_minimum, weight,
-                                local_attraction, global_attraction):
+                                local_attraction, global_attraction, sigma):
 
         local_speed, global_speed = numpy.random.uniform(0, 1, 2)
 
@@ -63,8 +64,8 @@ class Bee(object):
         # calculation of the next velocity
         self.velocity = self.velocity * weight +\
             local_attraction * local_speed * to_local +\
-            global_attraction * global_speed * to_global
-
+            global_attraction * global_speed * to_global +\
+            numpy.random.normal(0, sigma, 2)
 
     ################################################################
     # This function moves the Bee
@@ -82,11 +83,12 @@ class Bee(object):
 
         fc = self.function(self.position)
 
-        if fc < self.local_minimum_value:
+        if fc <= self.local_minimum_value:
             self.local_minimum_value = fc
             self.local_minimum = numpy.copy(self.position)
 
-        return (self.local_minimum, self.local_minimum_value)
+        return [numpy.copy(self.position), numpy.copy(self.local_minimum),
+                self.local_minimum_value]
 
     ################################################################
     # Technical methods
@@ -108,16 +110,18 @@ class BeeColony(object):
     # min_bounds, max_bounds - the bounds of optimiztion area
     # function - function to optimize
     # n_iter - the number of iteration for one epoch (int)
-    # weight_generator - lambda expression to geneerate current weight from
-    #           the number of the current iteration
+    # weight_generator - lambda expression to geneerate current
+    #           weight from the number of the current iteration
     #           (int->float)
     # local_attraction_generator - lambda expression to generate
-    #           local_attraction from the number of the current iteration
-    #           (int -> float)
+    #           local_attraction from the number of the current
+    #           iteration (int -> float)
     # global_attraction_generator - lambda expression to generate
-    #           global_attraction from the number of the current iteration
+    #           global_attraction from the number of the current
+    #           iteration (int -> float)
+    # sigma_generator - lambda exression to generate speed dispersion
+    #           from the number of the current iteration
     #           (int -> float)
-    # sigma - initial dispersion of velocities
     #
     ################################################################
     def __init__(self, function, min_bounds, max_bounds,
@@ -125,20 +129,22 @@ class BeeColony(object):
                  weight_generator=lambda n: 0.9,
                  local_attraction_generator=lambda n: 0.2,
                  global_attraction_generator=lambda n: 0.1,
-                 sigma=1):
+                 sigma_generator=lambda n: 10):
 
         self.weight_generator = weight_generator
         self.local_attraction_generator = local_attraction_generator
         self.global_attraction_generator = global_attraction_generator
+        self.sigma_generator = sigma_generator
         self.function = function
 
         self.min_bounds = numpy.copy(min_bounds)
         self.max_bounds = numpy.copy(max_bounds)
 
         self.n_iter = n_iter
+        self.n_bees = n_bees
 
-        self.bee_array = [ Bee(self.function, self.min_bounds, self.max_bounds,
-                               sigma) for i in range(self.n_iter) ]
+        self.bee_array = [ Bee(self.function, self.min_bounds, \
+                               self.max_bounds) for i in range(self.n_bees) ]
 
         self.global_minimum = numpy.copy(self.bee_array[0].position)
         self.global_minimum_value = self.function(self.global_minimum)
@@ -166,12 +172,13 @@ class BeeColony(object):
                     cached_global_minimum,
                     self.weight_generator(iteration),
                     self.local_attraction_generator(iteration),
-                    self.global_attraction_generator(iteration))
+                    self.global_attraction_generator(iteration),
+                    self.sigma_generator(iteration))
                 retval = bee.move()
 
-            if retval[1] <= self.global_minimum_value:
-                self.global_minimum = numpy.copy(retval[0])
-                self.global_minimum_value = retval[1]
+                if retval[2] <= self.global_minimum_value:
+                    self.global_minimum = numpy.copy(retval[1])
+                    self.global_minimum_value = retval[2]
 
         return (self.global_minimum_value, self.global_minimum)
 
@@ -179,12 +186,13 @@ class BeeColony(object):
     ################################################################
     # This methods returns trjaectories of all bees
     #
-    ###############################################################
+    ################################################################
     def run_trajectories(self):
 
         progress_bar = tqdm.tqdm(list(range(self.n_iter)))
 
         trajectories = []
+        global_min = []
 
         for iteration in progress_bar:
 
@@ -200,17 +208,20 @@ class BeeColony(object):
                     cached_global_minimum,
                     self.weight_generator(iteration),
                     self.local_attraction_generator(iteration),
-                    self.global_attraction_generator(iteration))
+                    self.global_attraction_generator(iteration),
+                    self.sigma_generator(iteration))
                 retval = bee.move()
-                local.append(numpy.copy(retval))
+                local.append([numpy.copy(retval[0]), \
+                              numpy.copy(bee.local_minimum)])
 
-            if retval[1] <= self.global_minimum_value:
-                self.global_minimum = numpy.copy(retval[0])
-                self.global_minimum_value = retval[1]
+                if retval[2] <= self.global_minimum_value:
+                    self.global_minimum = numpy.copy(retval[1])
+                    self.global_minimum_value = retval[2]
 
             trajectories.append(local)
+            global_min.append(numpy.copy(self.global_minimum))
 
-        return numpy.array(trajectories)
+        return numpy.array(trajectories), numpy.array(global_min)
 
 
 
