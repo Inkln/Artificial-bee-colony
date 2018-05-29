@@ -16,7 +16,7 @@ class Hard2dFunction:
         self.p2 = np.random.uniform(0.1, 0.8, 1)
         self.p3, self.p4, self.p5 = np.random.uniform(0.05, 0.6, 3)
         self.p6, self.p7, self.p8 = np.random.uniform(100, 400, 3)
-        self.p9, self.p10 = np.random.uniform(0, 0.0001, 2)
+        self.p9, self.p10 = np.random.uniform(0, 0.00002, 2)
 
 
     # This method calls function for one argument (np.array)
@@ -33,7 +33,7 @@ class Hard2dFunction:
         return  (-result * (1 + np.sin(x[1] / self.p6) * self.p3 + \
                            np.sin(x[0] / self.p7) * self.p4 + \
                            np.cos(n / self.p8) * self.p5  ) \
-                            + (x[0] ** 2) * self.p9 + (x[1] ** 2) * self.p10)[0]
+                            + (x[0] ** 2) * self.p9 + (x[1] ** 2) * self.p10)[0] + 3000
 
 
     # This method returns the numeric lattice on lx, ly - coordinate linscpace

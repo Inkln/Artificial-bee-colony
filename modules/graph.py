@@ -19,7 +19,7 @@ class Graph:
 
 
     def build_equation_matrix(self, marked_vertices):
-        self.Mat = np.zeros(shape=(self.n_vertices, len(self.edges) ))
+        self.Mat = np.zeros(shape=(self.n_vertices, len(self.edges) ), dtype=float)
 
         for index, item in enumerate(self.edges):
             edge_from, edge_to, bound, cost = item
@@ -29,17 +29,18 @@ class Graph:
 
             if edge_to not in marked_vertices:
                 self.Mat[edge_to, index] -= 1
-
-        print(self.Mat)
+        self.Mat = self.Mat.astype(float)
 
 
     def gauss_transform(self):
+
+        self.Mat_backup = np.copy(self.Mat)
 
         current_line = 0
         one_columns = []
 
         for column in range(self.Mat.shape[1]):
-            print('column:', column)
+            # print('column:', column)
 
             # Find not zero element
             index = current_line
@@ -49,7 +50,7 @@ class Graph:
                     break;
                 else:
                     index += 1
-            print(index)
+            # print(index)
 
             if index == self.Mat.shape[0]:
                 continue
@@ -72,11 +73,42 @@ class Graph:
             one_columns.append(column)
 
 
-            print(self.Mat)
+            # print(self.Mat)
             current_line += 1
 
-        print("Ones:", one_columns)
 
+        for i in range(self.Mat.shape[0] - 1, -1, -1):
+            if np.linalg.norm(self.Mat[i], ord=1) == 0:
+                self.Mat = np.delete(self.Mat, i, 0)
+
+        self.ones = one_columns
+
+        # print("Ones:", one_columns)
+        # print(self.Mat)
+
+
+    def build_fundamental_solution(self):
+
+        M1 = np.delete(self.Mat, self.ones, axis=1)
+        print(self.Mat.shape[1] - len(self.ones))
+        M2 = -np.identity(self.Mat.shape[1] - len(self.ones), dtype=float)
+
+        self.fundamental = np.zeros(shape=(self.Mat.shape[1], self.Mat.shape[1] - len(self.ones)), dtype=float)
+
+        ptr_m1 = 0
+        ptr_m2 = 0
+
+        for i in range(self.fundamental.shape[0]):
+            if i in self.ones:
+                self.fundamental[i] = M1[ptr_m1]
+                ptr_m1 += 1
+            else:
+                self.fundamental[i] = M2[ptr_m2]
+                ptr_m2 += 1
+
+        # print(fundamental)
+        # print(self.Mat_backup)
+        # print(np.matrix(self.Mat_backup) * np.matrix(fundamental))
 
 
 if __name__ == "__main__":
@@ -86,9 +118,6 @@ if __name__ == "__main__":
                   (3, 2, 1, 2), \
                   (1, 2, 1, 4)])
     g.build_equation_matrix([0, 2])
-    g.Mat = np.array( [  [1, -1,   1,  0],
-                         [0,  0,  -1,  1],
-                         [1,  -1,  0,  1]
-                      ]   )
     g.gauss_transform()
+    g.build_fundamental_solution()
 
